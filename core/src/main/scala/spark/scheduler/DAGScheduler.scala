@@ -32,7 +32,7 @@ import spark.partial.ApproximateEvaluator
 import spark.partial.PartialResult
 import spark.storage.{BlockManager, BlockManagerMaster}
 import spark.util.{MetadataCleaner, TimeStampedHashMap}
-
+import spark.metrics.MetricsSystem
 /**
  * A Scheduler subclass that implements stage-oriented scheduling. It computes a DAG of stages for
  * each job, keeps track of which RDDs and stage outputs are materialized, and computes a minimal
@@ -123,7 +123,6 @@ class DAGScheduler(
   val resultStageToJob = new HashMap[Stage, ActiveJob]
 
   val metadataCleaner = new MetadataCleaner("DAGScheduler", this.cleanup)
-
   // Start a thread to run the DAGScheduler event loop
   def start() {
     new Thread("DAGScheduler") {

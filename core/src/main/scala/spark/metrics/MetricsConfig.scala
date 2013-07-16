@@ -6,39 +6,43 @@ import java.io.{File, FileInputStream}
 import scala.collection.mutable
 import scala.util.matching.Regex
 
-private[spark] class MetricsConfig(val configFile: String) {
+private[spark] class MetricsConfig(val configFile: Option[String]) {
   val properties = new Properties()
   val DEFAULT_PREFIX = "*"
   val INSTANCE_REGEX = "^(\\*|[a-zA-Z]+)\\.(.+)".r
   var propertyCategories: mutable.HashMap[String, Properties] = null
 
   private def setDefaultProperties(prop: Properties) {
-    prop.setProperty("*.sink.jmx.enabled", "default")
-    prop.setProperty("*.source.jvm.class", "spark.metrics.source.JvmSource")
+    prop.setProperty("*.sink.jmx.class", "spark.metrics.sink.JmxSink")
   }
 
   def initilize() {
     //Add default properties in case there's no properties file
     setDefaultProperties(properties)
 
-    val confFile = new File(configFile)
-    if (confFile.exists()) {
-      var fis: FileInputStream = null
-      try {
-        fis = new FileInputStream(configFile)
-        properties.load(fis)
-      } finally {
-        fis.close()
+    configFile map { f =>
+      val confFile = new File(f)
+      if (confFile.exists()) {
+        var fis: FileInputStream = null
+        try {
+          fis = new FileInputStream(confFile)
+          properties.load(fis)
+        } finally {
+          fis.close()
+        }
       }
     }
 
     propertyCategories = subProperties(properties, INSTANCE_REGEX)
     if (propertyCategories.contains(DEFAULT_PREFIX)) {
       import scala.collection.JavaConversions._
+
       val defaultProperty = propertyCategories(DEFAULT_PREFIX)
-      for ((inst, prop) <- propertyCategories; p <- defaultProperty
-        if inst != DEFAULT_PREFIX; if prop.getProperty(p._1) == null) {
-        prop.setProperty(p._1, p._2)
+      for { (inst, prop) <- propertyCategories
+            if (inst != DEFAULT_PREFIX)
+            (k, v) <- defaultProperty
+            if (prop.getProperty(k) == null) } {
+        prop.setProperty(k, v)
       }
     }
   }

@@ -8,7 +8,7 @@ private[spark] class DAGSchedulerSource(val dagScheduler: DAGScheduler) extends 
   val metricRegistry = new MetricRegistry()
   val sourceName = "DAGScheduler"
 
-  metricRegistry.register(MetricRegistry.name("stage", "failedStage"), new  Gauge[Int] {
+  metricRegistry.register(MetricRegistry.name("stage", "failedStage"), new Gauge[Int] {
     override def getValue: Int = dagScheduler.failed.size
   })
 
